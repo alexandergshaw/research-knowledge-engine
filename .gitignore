@@ -1,0 +1,17 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+dist/
+build/
+documents/raw_html/*
+!documents/raw_html/.gitkeep
+documents/extracted_text/*
+!documents/extracted_text/.gitkeep
+documents/pdfs/*
+!documents/pdfs/.gitkeep
+exports/*
+!exports/.gitkeep

@@ -1,0 +1,10 @@
+trusted_sites:
+  - domain: nist.gov
+    category: cybersecurity
+    trust_level: high
+  - domain: docs.python.org
+    category: software
+    trust_level: high
+  - domain: ed.gov
+    category: education
+    trust_level: high
