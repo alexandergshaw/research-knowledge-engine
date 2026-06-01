@@ -1,0 +1,5 @@
+-- supabase/seed.sql
+-- Development seed data for the Supabase database.
+--
+-- TODO: Add representative sample sources, feeds, and tags for local development
+-- TODO: This file should be safe to run on a fresh database (idempotent)
