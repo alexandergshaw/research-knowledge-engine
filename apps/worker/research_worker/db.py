@@ -96,6 +96,9 @@ def _claim_with_optional_cols(
             WHERE id = (
                 SELECT id FROM jobs
                 WHERE status = 'pending'
+                -- COALESCE handles rows where priority is NULL.
+                -- For optimal index usage add: ALTER TABLE jobs ALTER COLUMN priority SET DEFAULT 0;
+                -- then a partial index: CREATE INDEX ON jobs (priority, created_at) WHERE status='pending';
                 ORDER BY COALESCE(priority, 0) ASC, created_at ASC
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED

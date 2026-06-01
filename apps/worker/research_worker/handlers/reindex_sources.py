@@ -28,6 +28,10 @@ def run(job: dict[str, Any]) -> None:
     logger.info("[job %s] Reindexing sources via trigger", job_id)
 
     conn = db.get_connection()
+    # The connection uses autocommit=True (set in db.get_connection()), so each
+    # statement runs in its own implicit transaction.  A failed execute() does
+    # not leave the connection in an error state and no explicit rollback is
+    # required before issuing the fallback query.
     with conn.cursor() as cur:
         # Touch accessed_at to fire the search_vector trigger on every row.
         # If the table has an updated_at column the trigger may prefer that;

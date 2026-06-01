@@ -27,6 +27,14 @@ def _extract_domain(url: str) -> str:
     return (parsed.netloc or parsed.path).lower().split(":")[0]
 
 
+def _get_tag_term(tag: Any) -> str | None:
+    """Extract the term string from a feedparser tag object or dict."""
+    term = getattr(tag, "term", None)
+    if term is None and isinstance(tag, dict):
+        term = tag.get("term")
+    return str(term) if term is not None else None
+
+
 def _process_feed(job_id: int, feed: dict[str, Any]) -> int:
     """Fetch a single feed and enqueue import_url jobs for each item.
 
@@ -53,9 +61,9 @@ def _process_feed(job_id: int, feed: dict[str, Any]) -> int:
 
         item_tags: list[str] = []
         for tag in entry.get("tags", []):
-            term = getattr(tag, "term", None) or (tag.get("term") if isinstance(tag, dict) else None)
+            term = _get_tag_term(tag)
             if term:
-                item_tags.append(str(term))
+                item_tags.append(term)
 
         merged_tags = sorted(set(feed_tags + item_tags))
 
