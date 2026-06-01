@@ -3,7 +3,7 @@
 from pathlib import Path
 
 PACKAGE_ROOT = Path(__file__).resolve().parent
-# packages/research_engine → packages → repo root
+# packages/research_engine/__init__.py → packages/research_engine/ → packages/ → repo root
 REPO_ROOT = PACKAGE_ROOT.parent.parent
 DEFAULT_DATABASE_PATH = REPO_ROOT / "database" / "research.db"
 DEFAULT_DOCUMENTS_PATH = REPO_ROOT / "documents"

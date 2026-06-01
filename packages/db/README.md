@@ -27,7 +27,7 @@ This package is the single source of truth for the database schema. It is used b
 | `feeds` | Configured RSS feed definitions |
 | `jobs` | Background job queue |
 | `research_reports` | Generated research reports |
-| `source_tags` | Normalised source tag join table |
+| `source_tags` | Normalized source tag join table |
 
 ## Phase 1 Note
 

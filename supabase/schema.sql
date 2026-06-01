@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS research_reports (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Source tags: normalised tag join table
+-- Source tags: normalized tag join table
 CREATE TABLE IF NOT EXISTS source_tags (
     source_id BIGINT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
     tag       TEXT NOT NULL,
