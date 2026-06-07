@@ -1,0 +1,200 @@
+# data/source_categories.yaml
+#
+# Canonical category taxonomy for the Research Knowledge Engine and all sibling
+# projects (Personal Knowledge Base, Classroom Artifact Grader, Course Generator,
+# Workflow Automation Platform, Resume Tailoring Engine).
+#
+# Conventions:
+#   - All category and subcategory names use kebab-case.
+#   - Top-level categories are intentionally broad and stable (5+ year horizon).
+#   - Avoid company-specific or technology-specific categories here; those belong
+#     in `tags` on individual sources/feeds, not in the taxonomy.
+#
+# Schema (per category):
+#   <category-name>:
+#     name:          Human-readable display name.
+#     description:   One-sentence description of the category's scope.
+#     tags:          Synonyms / lookup aliases used by find_category_by_tag().
+#     subcategories: Stable, broad sub-topics (kebab-case).
+
+categories:
+  software:
+    name: Software
+    description: Software engineering and development topics.
+    tags:
+      - software
+      - programming
+      - engineering
+      - development
+      - dev
+    subcategories:
+      - frontend
+      - backend
+      - cloud
+      - devops
+      - testing
+      - architecture
+      - programming-languages
+      - open-source
+      - web-development
+      - distributed-systems
+
+  computer-science:
+    name: Computer Science
+    description: Core computer science concepts and disciplines.
+    tags:
+      - computer-science
+      - cs
+      - engineering
+    subcategories:
+      - data-structures
+      - algorithms
+      - databases
+      - operating-systems
+      - networking
+      - cybersecurity
+      - software-engineering
+      - artificial-intelligence
+      - theory
+      - compilers
+
+  education:
+    name: Education
+    description: Higher education and learning systems.
+    tags:
+      - education
+      - learning
+      - edtech
+    subcategories:
+      - higher-education
+      - instructional-design
+      - accessibility
+      - online-learning
+      - assessment
+      - curriculum-development
+      - student-success
+      - educational-technology
+
+  teaching:
+    name: Teaching
+    description: Teaching practices and classroom management.
+    tags:
+      - teaching
+      - pedagogy
+      - classroom
+    subcategories:
+      - assignments
+      - rubrics
+      - grading
+      - active-learning
+      - project-based-learning
+      - discussions
+      - course-design
+      - classroom-management
+
+  cybersecurity:
+    name: Cybersecurity
+    description: Information security and defensive practices.
+    tags:
+      - security
+      - cybersecurity
+      - infosec
+    subcategories:
+      - offensive-security
+      - defensive-security
+      - malware
+      - cryptography
+      - incident-response
+      - digital-forensics
+      - standards
+      - compliance
+      - vulnerability-management
+      - threat-intelligence
+
+  ai:
+    name: Artificial Intelligence
+    description: Artificial intelligence and machine learning.
+    tags:
+      - ai
+      - ml
+      - machine-learning
+    subcategories:
+      - llms
+      - machine-learning
+      - agents
+      - embeddings
+      - rag
+      - computer-vision
+      - nlp
+      - industry
+      - reinforcement-learning
+      - ai-safety
+
+  research:
+    name: Research
+    description: Academic and technical research.
+    tags:
+      - research
+      - science
+      - academia
+    subcategories:
+      - computer-science
+      - engineering
+      - education
+      - methodology
+      - statistics
+      - papers
+      - reproducibility
+      - peer-review
+
+  business:
+    name: Business
+    description: Organizations and management.
+    tags:
+      - business
+      - management
+      - organization
+    subcategories:
+      - strategy
+      - leadership
+      - operations
+      - entrepreneurship
+      - product-management
+      - project-management
+      - marketing
+      - sales
+
+  finance:
+    name: Finance
+    description: Personal and organizational finance.
+    tags:
+      - finance
+      - investing
+      - money
+    subcategories:
+      - investing
+      - retirement
+      - taxes
+      - real-estate
+      - budgeting
+      - dividends
+      - personal-finance
+      - markets
+
+  career:
+    name: Career
+    description: Professional development and employment topics.
+    tags:
+      - career
+      - jobs
+      - leadership
+      - employment
+    subcategories:
+      - resumes
+      - interviewing
+      - hiring
+      - compensation
+      - leadership
+      - management
+      - job-market
+      - professional-development

@@ -1,0 +1,200 @@
+# data/sample_feeds.yaml
+#
+# Sample RSS feed catalog mapped to the canonical taxonomy in
+# `data/source_categories.yaml`. Each feed specifies a top-level `category` and
+# a `subcategory` that MUST exist in the taxonomy (validate with
+# validate_subcategory()). `tags` are free-form lookup aliases.
+#
+# This file is a reference/seed dataset; the live system reads feeds from the
+# Supabase `feeds` table, not this file.
+
+feeds:
+  # ---- Software -----------------------------------------------------------
+  - name: Python Insider
+    url: https://blog.python.org/feeds/posts/default
+    category: software
+    subcategory: programming-languages
+    tags: [python, programming-languages]
+
+  - name: AWS Blog
+    url: https://aws.amazon.com/blogs/aws/feed/
+    category: software
+    subcategory: cloud
+    tags: [aws, cloud]
+
+  - name: GitHub Blog
+    url: https://github.blog/feed/
+    category: software
+    subcategory: open-source
+    tags: [github, open-source]
+
+  - name: Cloudflare Blog
+    url: https://blog.cloudflare.com/rss/
+    category: software
+    subcategory: distributed-systems
+    tags: [cloudflare, distributed-systems]
+
+  - name: Microsoft DevBlogs
+    url: https://devblogs.microsoft.com/feed/
+    category: software
+    subcategory: architecture
+    tags: [microsoft, architecture]
+
+  - name: Martin Fowler
+    url: https://martinfowler.com/feed.atom
+    category: software
+    subcategory: architecture
+    tags: [architecture, design]
+
+  - name: Kubernetes Blog
+    url: https://kubernetes.io/feed.xml
+    category: software
+    subcategory: devops
+    tags: [kubernetes, devops]
+
+  - name: CSS-Tricks
+    url: https://css-tricks.com/feed/
+    category: software
+    subcategory: frontend
+    tags: [css, frontend, web-development]
+
+  # ---- Computer Science ---------------------------------------------------
+  - name: The Morning Paper
+    url: https://blog.acolyer.org/feed/
+    category: computer-science
+    subcategory: algorithms
+    tags: [papers, algorithms]
+
+  - name: PostgreSQL News
+    url: https://www.postgresql.org/news.rss
+    category: computer-science
+    subcategory: databases
+    tags: [postgres, databases]
+
+  # ---- Cybersecurity ------------------------------------------------------
+  - name: NIST Cybersecurity
+    url: https://www.nist.gov/news-events/cybersecurity/rss.xml
+    category: cybersecurity
+    subcategory: standards
+    tags: [nist, standards]
+
+  - name: CISA Advisories
+    url: https://www.cisa.gov/cybersecurity-advisories/all.xml
+    category: cybersecurity
+    subcategory: defensive-security
+    tags: [cisa, advisories]
+
+  - name: SANS Internet Storm Center
+    url: https://isc.sans.edu/rssfeed.xml
+    category: cybersecurity
+    subcategory: incident-response
+    tags: [sans, incident-response]
+
+  - name: Krebs on Security
+    url: https://krebsonsecurity.com/feed/
+    category: cybersecurity
+    subcategory: defensive-security
+    tags: [krebs, security-news]
+
+  - name: Schneier on Security
+    url: https://www.schneier.com/feed/atom/
+    category: cybersecurity
+    subcategory: cryptography
+    tags: [schneier, cryptography]
+
+  # ---- Education ----------------------------------------------------------
+  - name: EDUCAUSE Review
+    url: https://er.educause.edu/feed
+    category: education
+    subcategory: higher-education
+    tags: [educause, higher-education]
+
+  - name: Inside Higher Ed
+    url: https://www.insidehighered.com/rss.xml
+    category: education
+    subcategory: higher-education
+    tags: [highered]
+
+  - name: Chronicle of Higher Education
+    url: https://www.chronicle.com/feed
+    category: education
+    subcategory: student-success
+    tags: [highered, student-success]
+
+  - name: ED.gov Blog
+    url: https://blog.ed.gov/feed/
+    category: education
+    subcategory: instructional-design
+    tags: [government, policy]
+
+  # ---- Teaching -----------------------------------------------------------
+  - name: Edutopia
+    url: https://www.edutopia.org/rss.xml
+    category: teaching
+    subcategory: active-learning
+    tags: [pedagogy, active-learning]
+
+  - name: Faculty Focus
+    url: https://www.facultyfocus.com/feed/
+    category: teaching
+    subcategory: course-design
+    tags: [pedagogy, course-design]
+
+  # ---- AI -----------------------------------------------------------------
+  - name: OpenAI News
+    url: https://openai.com/news/rss.xml
+    category: ai
+    subcategory: industry
+    tags: [openai, industry]
+
+  - name: Anthropic News
+    url: https://www.anthropic.com/rss.xml
+    category: ai
+    subcategory: industry
+    tags: [anthropic, industry]
+
+  - name: arXiv cs.AI
+    url: http://export.arxiv.org/rss/cs.AI
+    category: ai
+    subcategory: machine-learning
+    tags: [arxiv, machine-learning]
+
+  - name: Hugging Face Blog
+    url: https://huggingface.co/blog/feed.xml
+    category: ai
+    subcategory: llms
+    tags: [huggingface, llms]
+
+  # ---- Research -----------------------------------------------------------
+  - name: Google Research
+    url: https://blog.research.google/feeds/posts/default
+    category: research
+    subcategory: computer-science
+    tags: [google, computer-science]
+
+  - name: Nature Latest Research
+    url: https://www.nature.com/nature.rss
+    category: research
+    subcategory: papers
+    tags: [nature, papers]
+
+  # ---- Business -----------------------------------------------------------
+  - name: Harvard Business Review
+    url: https://hbr.org/feed
+    category: business
+    subcategory: leadership
+    tags: [hbr, leadership]
+
+  # ---- Finance ------------------------------------------------------------
+  - name: Investopedia News
+    url: https://www.investopedia.com/feedbuilder/feed/getfeed?feedName=rss_articles
+    category: finance
+    subcategory: investing
+    tags: [investing, markets]
+
+  # ---- Career -------------------------------------------------------------
+  - name: LinkedIn Talent Blog
+    url: https://www.linkedin.com/blog/talent/rss
+    category: career
+    subcategory: hiring
+    tags: [hiring, recruiting]
