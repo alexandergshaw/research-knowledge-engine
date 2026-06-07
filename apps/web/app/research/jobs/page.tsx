@@ -67,7 +67,7 @@ export default function JobsPage() {
             <option value="">All statuses</option>
             <option value="pending">Pending</option>
             <option value="running">Running</option>
-            <option value="completed">Completed</option>
+            <option value="done">Done</option>
             <option value="failed">Failed</option>
           </Select>
           {status && (

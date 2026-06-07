@@ -10,6 +10,9 @@ Deployment documentation for all services in the research knowledge engine.
 | Background worker | Railway | `apps/worker` |
 | Database | Supabase | `supabase/` |
 
+Important: Railway should run only the worker service (`apps/worker`).
+Do not deploy the web app (`apps/web`) to Railway in this architecture.
+
 ## Configuration
 
 See `infrastructure/` for deployment configuration files:

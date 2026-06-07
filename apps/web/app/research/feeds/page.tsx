@@ -16,7 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FeedForm } from "@/components/forms/FeedForm";
 import { formatDate } from "@/lib/utils";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
 import type { Feed } from "@/lib/types/database";
 import type { FeedFormValues } from "@/lib/validation/schemas";
 
@@ -101,6 +101,18 @@ export default function FeedsPage() {
     },
   });
 
+  const fetchNowMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_type: "fetch_rss", payload: {} }),
+      });
+      if (!res.ok) throw new Error("Failed to queue fetch job");
+      return res.json();
+    },
+  });
+
   return (
     <DashboardLayout title="Feeds">
       <div className="space-y-6">
@@ -109,11 +121,32 @@ export default function FeedsPage() {
             <h2 className="text-2xl font-bold tracking-tight">Feeds</h2>
             <p className="text-muted-foreground">{feeds.length} configured RSS feeds</p>
           </div>
-          <Button onClick={() => setShowForm(true)} disabled={showForm}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Feed
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => fetchNowMutation.mutate()}
+              disabled={fetchNowMutation.isPending || feeds.length === 0}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {fetchNowMutation.isPending ? "Queuing…" : "Fetch now"}
+            </Button>
+            <Button onClick={() => setShowForm(true)} disabled={showForm}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Feed
+            </Button>
+          </div>
         </div>
+
+        {fetchNowMutation.isSuccess && (
+          <div className="rounded-md border border-green-600/30 bg-green-600/10 px-4 py-2 text-sm text-green-700 dark:text-green-400">
+            Fetch queued. The worker will process all enabled feeds shortly — check the Jobs page.
+          </div>
+        )}
+        {fetchNowMutation.isError && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+            Failed to queue fetch. Please try again.
+          </div>
+        )}
 
         {(showForm || editingFeed) && (
           <Card>

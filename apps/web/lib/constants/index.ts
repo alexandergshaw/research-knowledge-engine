@@ -1,7 +1,7 @@
 export const JOB_STATUS = {
   PENDING: "pending",
   RUNNING: "running",
-  COMPLETED: "completed",
+  DONE: "done",
   FAILED: "failed",
 } as const;
 
@@ -9,8 +9,9 @@ export type JobStatus = (typeof JOB_STATUS)[keyof typeof JOB_STATUS];
 
 export const JOB_TYPES = {
   IMPORT_URL: "import_url",
-  FETCH_FEED: "fetch_feed",
-  INDEX_SOURCE: "index_source",
+  FETCH_RSS: "fetch_rss",
+  GENERATE_REPORT: "generate_report",
+  REINDEX_SOURCES: "reindex_sources",
 } as const;
 
 export const NAV_ITEMS = [

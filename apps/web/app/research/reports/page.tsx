@@ -5,6 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMutation } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -25,6 +28,7 @@ interface ReportsResponse {
 export default function ReportsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
+  const [query, setQuery] = useState("");
 
   const { data, isLoading, isError } = useQuery<ReportsResponse>({
     queryKey: ["reports", "list", { page }],
@@ -33,6 +37,24 @@ export default function ReportsPage() {
       const res = await fetch(`/api/reports?${params}`);
       if (!res.ok) throw new Error("Failed to fetch reports");
       return res.json();
+    },
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: async (q: string) => {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_type: "generate_report",
+          payload: { query: q, limit: 10 },
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to queue report job");
+      return res.json();
+    },
+    onSuccess: () => {
+      setQuery("");
     },
   });
 
@@ -47,6 +69,41 @@ export default function ReportsPage() {
             {data?.count ?? 0} research reports
           </p>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Generate a report</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="flex flex-col gap-3 sm:flex-row sm:items-center"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (query.trim()) generateMutation.mutate(query.trim());
+              }}
+            >
+              <Input
+                placeholder="Search topic, e.g. computer security"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="sm:max-w-md"
+              />
+              <Button type="submit" disabled={generateMutation.isPending || !query.trim()}>
+                {generateMutation.isPending ? "Queuing…" : "Generate report"}
+              </Button>
+            </form>
+            {generateMutation.isSuccess && (
+              <p className="mt-2 text-sm text-green-700 dark:text-green-400">
+                Report queued. The worker will generate it shortly — refresh this page in a moment.
+              </p>
+            )}
+            {generateMutation.isError && (
+              <p className="mt-2 text-sm text-destructive">
+                Failed to queue report. Please try again.
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         {isLoading && (
           <div className="text-muted-foreground text-sm py-8 text-center">

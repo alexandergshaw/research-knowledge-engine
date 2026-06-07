@@ -8,6 +8,7 @@ export function JobStatusBadge({ status }: JobStatusBadgeProps) {
   const variantMap: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "running" | "failed"> = {
     pending: "warning",
     running: "running",
+    done: "success",
     completed: "success",
     failed: "failed",
   };
