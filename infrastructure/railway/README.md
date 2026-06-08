@@ -11,7 +11,11 @@ the Supabase job queue and executes research engine tasks.
 
 | File | Purpose |
 |---|---|
-| `railway.toml` | Railway config-as-code (build + deploy settings) |
+| `apps/worker/railway.json` (repo) | Railway config-as-code (build + deploy settings) |
+
+The Railway configuration lives in `apps/worker/railway.json` — the service
+source directory — so Railway picks it up automatically for that service.
+This directory contains documentation only.
 
 ## Environment Variables (set in Railway dashboard)
 
