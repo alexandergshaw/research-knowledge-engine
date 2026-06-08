@@ -5,6 +5,7 @@ import { z } from "zod";
 const importUrlSchema = z.object({
   url: z.string().url(),
   category: z.string().optional(),
+  subcategory: z.string().optional(),
   tags: z.string().optional(),
 });
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { url, category, tags } = parsed.data;
+    const { url, category, subcategory, tags } = parsed.data;
     const tagArray = tags
       ? tags.split(",").map((t) => t.trim()).filter(Boolean)
       : [];
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
         payload: {
           url,
           category: category || null,
+          subcategory: subcategory || null,
           tags: tagArray,
         },
       })

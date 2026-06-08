@@ -16,9 +16,26 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FeedForm } from "@/components/forms/FeedForm";
 import { formatDate } from "@/lib/utils";
-import { Plus, Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
 import type { Feed } from "@/lib/types/database";
 import type { FeedFormValues } from "@/lib/validation/schemas";
+import {
+  useCategories,
+  isValidCategory,
+  isValidSubcategory,
+} from "@/lib/hooks/useCategories";
+import type { Category } from "@/lib/types/category";
+
+type MappingStatus = "valid" | "invalid" | "unmapped";
+
+function getMappingStatus(feed: Feed, categories: Category[]): MappingStatus {
+  if (!feed.category) return "unmapped";
+  if (!isValidCategory(categories, feed.category)) return "invalid";
+  if (feed.subcategory && !isValidSubcategory(categories, feed.category, feed.subcategory)) {
+    return "invalid";
+  }
+  return "valid";
+}
 
 type FeedFormData = FeedFormValues & {
   tags?: string;
@@ -46,6 +63,9 @@ export default function FeedsPage() {
       return res.json();
     },
   });
+
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData?.categories ?? [];
 
   const createMutation = useMutation({
     mutationFn: async (values: FeedFormData) => {
@@ -215,6 +235,9 @@ export default function FeedsPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>URL</TableHead>
                   <TableHead>Category</TableHead>
+                  <TableHead>Subcategory</TableHead>
+                  <TableHead>Tags</TableHead>
+                  <TableHead>Mapping</TableHead>
                   <TableHead>Active</TableHead>
                   <TableHead>Last Fetched</TableHead>
                   <TableHead className="w-24">Actions</TableHead>
@@ -241,6 +264,54 @@ export default function FeedsPage() {
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      {feed.subcategory ? (
+                        <Badge variant="secondary" className="font-mono text-xs">
+                          {feed.subcategory}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {feed.tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {feed.tags.map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const status = getMappingStatus(feed, categories);
+                        if (status === "valid") {
+                          return (
+                            <Badge variant="success" className="gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Valid
+                            </Badge>
+                          );
+                        }
+                        if (status === "invalid") {
+                          return (
+                            <Badge variant="destructive" className="gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              Invalid
+                            </Badge>
+                          );
+                        }
+                        return (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Unmapped
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <Badge variant={feed.enabled ? "success" : "outline"}>

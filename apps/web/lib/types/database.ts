@@ -20,6 +20,7 @@ export interface Feed {
   name: string;
   url: string;
   category: string | null;
+  subcategory: string | null;
   tags: string[];
   enabled: boolean;
   last_fetched_at: string | null;

@@ -9,6 +9,7 @@ import {
   Briefcase,
   BookOpen,
   Link as LinkIcon,
+  FolderTree,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Sources", href: "/research/sources", icon: FileText },
   { label: "Feeds", href: "/research/feeds", icon: Rss },
+  { label: "Categories", href: "/research/categories", icon: FolderTree },
   { label: "Jobs", href: "/research/jobs", icon: Briefcase },
   { label: "Reports", href: "/research/reports", icon: BookOpen },
   { label: "Import URL", href: "/research/import", icon: LinkIcon },

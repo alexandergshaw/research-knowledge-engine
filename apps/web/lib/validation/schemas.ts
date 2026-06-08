@@ -3,6 +3,7 @@ import { z } from "zod";
 export const importUrlSchema = z.object({
   url: z.string().url("Please enter a valid URL"),
   category: z.string().optional(),
+  subcategory: z.string().optional(),
   tags: z.string().optional(),
 });
 
