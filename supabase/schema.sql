@@ -7,6 +7,16 @@
 --
 -- TODO: Replace with numbered migration files in supabase/migrations/ (Phase 2)
 
+-- array_to_string() is only STABLE, so it cannot be used directly in a
+-- GENERATED column. This IMMUTABLE wrapper makes the sources.search_vector
+-- generation expression valid.
+CREATE OR REPLACE FUNCTION immutable_array_to_string(text[])
+    RETURNS text
+    LANGUAGE sql
+    IMMUTABLE
+    PARALLEL SAFE
+AS $$ SELECT array_to_string($1, ' ') $$;
+
 -- Sources: indexed research documents
 CREATE TABLE IF NOT EXISTS sources (
     id          BIGSERIAL PRIMARY KEY,
@@ -31,7 +41,7 @@ CREATE TABLE IF NOT EXISTS sources (
             COALESCE(content, '') || ' ' ||
             COALESCE(category, '') || ' ' ||
             COALESCE(subcategory, '') || ' ' ||
-            COALESCE(array_to_string(tags, ' '), '')
+            COALESCE(immutable_array_to_string(tags), '')
         )
     ) STORED
 );

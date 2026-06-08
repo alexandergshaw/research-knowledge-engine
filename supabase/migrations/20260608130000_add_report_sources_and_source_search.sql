@@ -18,6 +18,17 @@
 -- ---------------------------------------------------------------------------
 ALTER TABLE sources ADD COLUMN IF NOT EXISTS subcategory TEXT;
 
+-- array_to_string() is only marked STABLE, so Postgres rejects it inside a
+-- GENERATED column ("generation expression is not immutable"). Wrap it in an
+-- IMMUTABLE helper: joining a text[] with a constant separator is genuinely
+-- immutable, so this is safe.
+CREATE OR REPLACE FUNCTION immutable_array_to_string(text[])
+    RETURNS text
+    LANGUAGE sql
+    IMMUTABLE
+    PARALLEL SAFE
+AS $$ SELECT array_to_string($1, ' ') $$;
+
 -- Generated full-text search vector over title, content, category, and tags.
 -- GENERATED ALWAYS ... STORED keeps it in sync automatically on insert/update.
 ALTER TABLE sources
@@ -29,7 +40,7 @@ ALTER TABLE sources
             COALESCE(content, '') || ' ' ||
             COALESCE(category, '') || ' ' ||
             COALESCE(subcategory, '') || ' ' ||
-            COALESCE(array_to_string(tags, ' '), '')
+            COALESCE(immutable_array_to_string(tags), '')
         )
     ) STORED;
 

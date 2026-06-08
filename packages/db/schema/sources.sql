@@ -4,6 +4,15 @@
 -- TODO: Apply via Supabase migration when Phase 2 begins.
 -- This mirrors the SQLite schema used in Phase 1 (packages/research_engine/db.py).
 
+-- array_to_string() is only STABLE, so it cannot be used directly in a
+-- GENERATED column. This IMMUTABLE wrapper makes the search_vector valid.
+CREATE OR REPLACE FUNCTION immutable_array_to_string(text[])
+    RETURNS text
+    LANGUAGE sql
+    IMMUTABLE
+    PARALLEL SAFE
+AS $$ SELECT array_to_string($1, ' ') $$;
+
 CREATE TABLE IF NOT EXISTS sources (
     id          BIGSERIAL PRIMARY KEY,
     title       TEXT NOT NULL,
@@ -27,7 +36,7 @@ CREATE TABLE IF NOT EXISTS sources (
             COALESCE(content, '') || ' ' ||
             COALESCE(category, '') || ' ' ||
             COALESCE(subcategory, '') || ' ' ||
-            COALESCE(array_to_string(tags, ' '), '')
+            COALESCE(immutable_array_to_string(tags), '')
         )
     ) STORED
 );
