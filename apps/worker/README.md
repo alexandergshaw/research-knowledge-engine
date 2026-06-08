@@ -49,8 +49,31 @@ writes results and logs back to the database.
 |---|---|---|
 | `import_url` | `url` (required), `category`, `tags` | Fetch a URL and upsert into `sources` |
 | `fetch_rss` | `feed_id` (optional UUID) | Fetch one or all active RSS feeds and enqueue `import_url` jobs |
-| `generate_report` | `query` (required), `limit` | Full-text search sources and save a Markdown report |
+| `generate_report` | `saved_query_id` **or** `query` (one required), `title`, `category`, `subcategory`, `limit` | Full-text search sources and save a Markdown report |
 | `reindex_sources` | _(none)_ | Touch all source rows to re-fire the `search_vector` trigger |
+
+### `generate_report` payloads
+
+The handler accepts two payload shapes:
+
+1. **Direct query** — search terms supplied inline:
+   ```json
+   {"query": "database normalization", "title": "Database Normalization Report", "limit": 5}
+   ```
+   Only `query` is required. `title` defaults to `Research Report: {query}`.
+   `category` / `subcategory` narrow the source search; `limit` caps the number
+   of sources (default `10`).
+
+2. **Saved query** — reference a row in `saved_queries`:
+   ```json
+   {"saved_query_id": "PASTE_UUID_HERE"}
+   ```
+   The handler loads the saved query's `query`, `title`, `category`, and
+   `subcategory`, generates the report, and inserts a row into `query_results`
+   linking the saved query to the new report.
+
+Reports are deterministic "source packets": Markdown containing source metadata
+and verbatim excerpts. No LLMs, embeddings, or external AI APIs are used.
 
 ## Database Schema Requirements
 
@@ -90,13 +113,39 @@ VALUES ('import_url', '{"url": "https://docs.python.org/3/tutorial/index.html", 
 INSERT INTO jobs (job_type, payload, status)
 VALUES ('fetch_rss', '{}', 'pending');
 
--- generate_report
+-- generate_report (direct query)
 INSERT INTO jobs (job_type, payload, status)
-VALUES ('generate_report', '{"query": "Python async patterns"}', 'pending');
+VALUES (
+  'generate_report',
+  '{"query": "database normalization", "title": "Database Normalization Report", "limit": 5}'::jsonb,
+  'pending'
+);
+
+-- generate_report (saved query)
+--   1. Create a saved query and capture its id:
+INSERT INTO saved_queries (title, query, category, subcategory)
+VALUES ('Database Education', 'database normalization sql pedagogy', 'computer-science', 'databases')
+RETURNING id;
+--   2. Enqueue a job referencing that id:
+INSERT INTO jobs (job_type, payload, status)
+VALUES ('generate_report', '{"saved_query_id": "PASTE_ID_HERE"}'::jsonb, 'pending');
 
 -- reindex_sources
 INSERT INTO jobs (job_type, payload, status)
 VALUES ('reindex_sources', '{}', 'pending');
+```
+
+### Verify generated reports
+
+```sql
+-- Most recent reports:
+SELECT id, title, query, created_at
+FROM research_reports
+ORDER BY created_at DESC
+LIMIT 5;
+
+-- Saved-query → report links:
+SELECT * FROM query_results ORDER BY created_at DESC LIMIT 5;
 ```
 
 ## Check Logs

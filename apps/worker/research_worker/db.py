@@ -32,6 +32,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from functools import lru_cache
 from typing import Any
 
 import psycopg
@@ -52,6 +53,27 @@ def get_connection() -> psycopg.Connection:
         _connection = psycopg.connect(url, row_factory=dict_row, autocommit=True)
         logger.info("Database connection established")
     return _connection
+
+
+@lru_cache(maxsize=None)
+def _table_columns(table_name: str) -> frozenset[str]:
+    """Return the set of column names for a table (cached for the process).
+
+    Used to adapt queries to schema variants — e.g. whether ``sources`` has a
+    ``search_vector`` or ``subcategory`` column, or whether ``research_reports``
+    stores its body in ``markdown`` or the legacy ``content`` column.
+    """
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = %s
+            """,
+            (table_name,),
+        )
+        return frozenset(row["column_name"] for row in cur.fetchall())
 
 
 # ---------------------------------------------------------------------------
@@ -281,28 +303,132 @@ def save_research_report(report_data: dict[str, Any]) -> int:
         return int(row["id"])
 
 
-def search_sources(query: str, limit: int = 10) -> list[dict[str, Any]]:
-    """Full-text search over the sources table using Postgres tsvector."""
+def search_sources(
+    query: str,
+    limit: int = 10,
+    category: str | None = None,
+    subcategory: str | None = None,
+) -> list[dict[str, Any]]:
+    """Full-text search over the sources table.
+
+    Ranks rows with ``ts_rank`` against ``plainto_tsquery('english', query)``.
+    Prefers the precomputed ``search_vector`` column when present, otherwise
+    falls back to a tsvector computed on the fly from title + content.
+
+    Optional ``category`` / ``subcategory`` filters are applied only when the
+    corresponding columns exist on the sources table, so a missing
+    ``subcategory`` column is ignored safely.
+
+    Results are ordered by rank (desc), then most-recent published / accessed.
+    """
+    conn = get_connection()
+    cols = _table_columns("sources")
+
+    if "search_vector" in cols:
+        rank_expr = "ts_rank(search_vector, plainto_tsquery('english', %(q)s))"
+        match_expr = "search_vector @@ plainto_tsquery('english', %(q)s)"
+    else:
+        computed = (
+            "to_tsvector('english', "
+            "COALESCE(title, '') || ' ' || COALESCE(content, ''))"
+        )
+        rank_expr = f"ts_rank({computed}, plainto_tsquery('english', %(q)s))"
+        match_expr = f"{computed} @@ plainto_tsquery('english', %(q)s)"
+
+    select_cols = ["id", "title", "url", "domain", "category", "content"]
+    for optional in ("subcategory", "source_type", "trust_level", "published_at", "accessed_at"):
+        if optional in cols:
+            select_cols.append(optional)
+
+    where_clauses = [match_expr]
+    params: dict[str, Any] = {"q": query, "limit": limit}
+
+    if category and "category" in cols:
+        where_clauses.append("category = %(category)s")
+        params["category"] = category
+    if subcategory and "subcategory" in cols:
+        where_clauses.append("subcategory = %(subcategory)s")
+        params["subcategory"] = subcategory
+
+    order_clauses = [f"{rank_expr} DESC"]
+    if "published_at" in cols:
+        order_clauses.append("published_at DESC NULLS LAST")
+    if "accessed_at" in cols:
+        order_clauses.append("accessed_at DESC NULLS LAST")
+
+    sql = (
+        f"SELECT {', '.join(select_cols)}, {rank_expr} AS rank\n"
+        f"FROM sources\n"
+        f"WHERE {' AND '.join(where_clauses)}\n"
+        f"ORDER BY {', '.join(order_clauses)}\n"
+        f"LIMIT %(limit)s"
+    )
+
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        return cur.fetchall()
+
+
+# ---------------------------------------------------------------------------
+# Saved queries & report linkage
+# ---------------------------------------------------------------------------
+
+
+def get_saved_query(saved_query_id: str) -> dict[str, Any] | None:
+    """Return a single saved_queries row by id, or None if not found."""
+    conn = get_connection()
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM saved_queries WHERE id = %s", (saved_query_id,))
+        return cur.fetchone()
+
+
+def save_report(query: str, title: str, markdown: str) -> int:
+    """Insert a research report and return its (bigint) id.
+
+    Adapts to the table schema: writes the body to ``markdown`` and/or the
+    legacy ``content`` column, whichever exist. ``research_reports.id`` is a
+    bigint, so the returned value is an int.
+    """
+    conn = get_connection()
+    cols = _table_columns("research_reports")
+
+    insert_cols = ["query", "title"]
+    values: dict[str, Any] = {"query": query, "title": title}
+
+    if "markdown" in cols:
+        insert_cols.append("markdown")
+        values["markdown"] = markdown
+    if "content" in cols:
+        insert_cols.append("content")
+        values["content"] = markdown
+
+    placeholders = ", ".join(f"%({col})s" for col in insert_cols)
+    sql = (
+        f"INSERT INTO research_reports ({', '.join(insert_cols)}) "
+        f"VALUES ({placeholders}) RETURNING id"
+    )
+    with conn.cursor() as cur:
+        cur.execute(sql, values)
+        row = cur.fetchone()
+        return int(row["id"])
+
+
+def link_query_result(saved_query_id: str, report_id: int) -> None:
+    """Link a saved query to a generated report via query_results.
+
+    ``query_results.report_id`` is a bigint referencing
+    ``research_reports.id``, so ``report_id`` is inserted as an int.
+    """
     conn = get_connection()
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT
-                id, title, url, domain, category, content,
-                ts_rank(
-                    to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(content, '')),
-                    plainto_tsquery('english', %s)
-                ) AS rank
-            FROM sources
-            WHERE
-                to_tsvector('english', COALESCE(title, '') || ' ' || COALESCE(content, ''))
-                @@ plainto_tsquery('english', %s)
-            ORDER BY rank DESC
-            LIMIT %s
+            INSERT INTO query_results (saved_query_id, report_id)
+            VALUES (%s, %s)
             """,
-            (query, query, limit),
+            (saved_query_id, int(report_id)),
         )
-        return cur.fetchall()
+
 
 
 # ---------------------------------------------------------------------------
