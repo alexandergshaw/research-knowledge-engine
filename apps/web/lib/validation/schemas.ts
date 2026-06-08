@@ -18,3 +18,13 @@ export const feedSchema = z.object({
 });
 
 export type FeedFormValues = z.infer<typeof feedSchema>;
+
+export const savedQuerySchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  query: z.string().min(1, "Query is required"),
+  category: z.string().optional(),
+  subcategory: z.string().optional(),
+  active: z.boolean().default(true),
+});
+
+export type SavedQueryFormValues = z.infer<typeof savedQuerySchema>;

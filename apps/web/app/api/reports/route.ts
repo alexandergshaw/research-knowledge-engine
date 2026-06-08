@@ -5,17 +5,29 @@ import { PAGE_SIZE } from "@/lib/constants";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") ?? "1", 10);
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+    const search = searchParams.get("search")?.trim() ?? "";
+    const sort = searchParams.get("sort") ?? "created_at";
+    const dir = searchParams.get("dir") === "asc" ? "asc" : "desc";
+
+    const allowedSort = new Set(["title", "query", "created_at"]);
+    const sortColumn = allowedSort.has(sort) ? sort : "created_at";
 
     const supabase = await createClient();
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, count, error } = await supabase
+    let query = supabase
       .from("research_reports")
       .select("id, query, title, created_at", { count: "exact" })
-      .order("created_at", { ascending: false })
+      .order(sortColumn, { ascending: dir === "asc" })
       .range(from, to);
+
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,query.ilike.%${search}%`);
+    }
+
+    const { data, count, error } = await query;
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

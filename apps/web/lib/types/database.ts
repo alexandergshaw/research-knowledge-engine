@@ -44,7 +44,32 @@ export interface ResearchReport {
   query: string;
   title: string;
   content: string;
+  markdown: string | null;
   source_ids: number[];
+  created_at: string;
+}
+
+export interface SavedQuery {
+  id: string;
+  title: string;
+  query: string;
+  category: string | null;
+  subcategory: string | null;
+  active: boolean;
+  created_at: string;
+}
+
+export interface QueryResult {
+  id: string;
+  saved_query_id: string;
+  report_id: number;
+  created_at: string;
+}
+
+/** A report summary joined to a saved query via query_results. */
+export interface RelatedReport {
+  id: number;
+  title: string;
   created_at: string;
 }
 
