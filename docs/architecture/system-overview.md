@@ -97,6 +97,39 @@ RSS Feeds / URLs
 
 ---
 
+## The Research Loop
+
+The platform is a closed loop: a research **question** becomes a **job**, the
+**worker** gathers **sources**, assembles a deterministic **report**, and the
+**UI** surfaces it back to the user — with full source traceability in both
+directions.
+
+```mermaid
+flowchart LR
+    Q["Question<br/>(saved query / digest)"] --> J["Job<br/>(jobs table)"]
+    J --> W["Worker<br/>(Railway)"]
+    W -->|Postgres FTS| S["Sources<br/>(sources table)"]
+    S --> R["Report<br/>(research_reports +<br/>report_sources)"]
+    R --> U["UI<br/>(Vercel dashboard)"]
+    U -.->|new question| Q
+
+    R -. "Sources Used" .-> S
+    S -. "Used In Reports" .-> R
+```
+
+Key properties:
+
+- **Deterministic** — reports and digests are assembled from stored metadata
+  and verbatim excerpts ranked by Postgres `ts_rank`. There are **no LLMs,
+  embeddings, vector databases, or external AI APIs** anywhere in the loop.
+- **Traceable** — `report_sources` records which sources built each report
+  (with `rank`), enabling the "Sources Used" panel on reports and the "Used In
+  Reports" panel on sources.
+- **Repeatable** — saved queries and weekly digests re-run the same
+  search-and-assemble pipeline on a schedule or on demand.
+
+---
+
 ## Shared Packages
 
 | Package | Language | Purpose |

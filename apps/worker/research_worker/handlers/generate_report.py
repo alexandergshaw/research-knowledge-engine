@@ -219,7 +219,13 @@ def run(job: dict[str, Any]) -> None:
     )
 
     markdown = _build_markdown(title, query, sources)
-    report_id = db.save_report(query=query, title=title, markdown=markdown)
+    source_ids = [int(s["id"]) for s in sources if s.get("id") is not None]
+    report_id = db.save_report(
+        query=query, title=title, markdown=markdown, source_ids=source_ids
+    )
+
+    if source_ids:
+        db.insert_report_sources(report_id, source_ids)
 
     db.write_job_log(
         job_id,

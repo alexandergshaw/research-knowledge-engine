@@ -22,6 +22,7 @@ class FakeDB:
         self.logs: list[tuple] = []
         self.saved_reports: list[dict] = []
         self.links: list[tuple] = []
+        self.report_sources: list[tuple] = []
         self._next_report_id = 101
         self.search_calls: list[dict] = []
 
@@ -42,13 +43,25 @@ class FakeDB:
         )
         return self.sources
 
-    def save_report(self, query, title, markdown):
+    def save_report(self, query, title, markdown, source_ids=None):
         report_id = self._next_report_id
         self._next_report_id += 1
         self.saved_reports.append(
-            {"id": report_id, "query": query, "title": title, "markdown": markdown}
+            {
+                "id": report_id,
+                "query": query,
+                "title": title,
+                "markdown": markdown,
+                "source_ids": list(source_ids or []),
+            }
         )
         return report_id
+
+    def insert_report_sources(self, report_id, source_ids):
+        assert isinstance(report_id, int)
+        for source_id in source_ids:
+            assert isinstance(source_id, int)
+            self.report_sources.append((report_id, source_id))
 
     def link_query_result(self, saved_query_id, report_id):
         # Mirror the production contract: report_id is a bigint (int).
@@ -67,7 +80,7 @@ def patch_db(monkeypatch):
 
 SAMPLE_SOURCES = [
     {
-        "id": "11111111-1111-1111-1111-111111111111",
+        "id": 11,
         "title": "Database Normalization Explained",
         "url": "https://example.com/normalization",
         "domain": "example.com",
@@ -81,7 +94,7 @@ SAMPLE_SOURCES = [
         "accessed_at": None,
     },
     {
-        "id": "22222222-2222-2222-2222-222222222222",
+        "id": 22,
         "title": "SQL Pedagogy Notes",
         "url": "https://example.com/sql-teaching",
         "domain": "example.com",
@@ -114,6 +127,9 @@ def test_generate_report_with_direct_query(patch_db):
     assert fake.links == []
     # Limit propagated to the search call.
     assert fake.search_calls[0]["limit"] == 5
+    # report_sources rows recorded for each source, in order.
+    assert fake.report_sources == [(report["id"], 11), (report["id"], 22)]
+    assert report["source_ids"] == [11, 22]
 
 
 def test_generate_report_markdown_includes_source_titles(patch_db):

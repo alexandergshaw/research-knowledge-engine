@@ -11,15 +11,17 @@ import {
   Link as LinkIcon,
   FolderTree,
   Search,
+  Bookmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", href: "/", icon: LayoutDashboard },
   { label: "Sources", href: "/research/sources", icon: FileText },
+  { label: "Search", href: "/research/search", icon: Search },
   { label: "Feeds", href: "/research/feeds", icon: Rss },
   { label: "Categories", href: "/research/categories", icon: FolderTree },
-  { label: "Queries", href: "/research/queries", icon: Search },
+  { label: "Queries", href: "/research/queries", icon: Bookmark },
   { label: "Jobs", href: "/research/jobs", icon: Briefcase },
   { label: "Reports", href: "/research/reports", icon: BookOpen },
   { label: "Import URL", href: "/research/import", icon: LinkIcon },

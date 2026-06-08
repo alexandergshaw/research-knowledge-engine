@@ -28,3 +28,17 @@ export const savedQuerySchema = z.object({
 });
 
 export type SavedQueryFormValues = z.infer<typeof savedQuerySchema>;
+
+/** Query parameters for the source search / browse experience. */
+export const searchSchema = z.object({
+  keyword: z.string().optional(),
+  category: z.string().optional(),
+  subcategory: z.string().optional(),
+  tag: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  sort: z.enum(["relevance", "newest", "oldest"]).default("relevance"),
+});
+
+export type SearchFormValues = z.infer<typeof searchSchema>;
+

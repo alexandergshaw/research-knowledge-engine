@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS sources (
     domain      TEXT NOT NULL,
     source_type TEXT NOT NULL,
     category    TEXT,
+    subcategory TEXT,
     trust_level TEXT,
     published_at TIMESTAMPTZ,
     fetched_at   TIMESTAMPTZ,
@@ -18,8 +19,22 @@ CREATE TABLE IF NOT EXISTS sources (
     raw_path             TEXT,
     extracted_text_path  TEXT,
     content     TEXT,
-    tags        TEXT[] NOT NULL DEFAULT '{}'
+    tags        TEXT[] NOT NULL DEFAULT '{}',
+    search_vector tsvector GENERATED ALWAYS AS (
+        to_tsvector(
+            'english',
+            COALESCE(title, '') || ' ' ||
+            COALESCE(content, '') || ' ' ||
+            COALESCE(category, '') || ' ' ||
+            COALESCE(subcategory, '') || ' ' ||
+            COALESCE(array_to_string(tags, ' '), '')
+        )
+    ) STORED
 );
 
+CREATE INDEX IF NOT EXISTS sources_search_vector_idx ON sources USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS sources_tags_idx ON sources USING GIN (tags);
+CREATE INDEX IF NOT EXISTS sources_category_idx ON sources (category);
+CREATE INDEX IF NOT EXISTS sources_published_at_idx ON sources (published_at DESC NULLS LAST);
+
 -- TODO: Add RLS policies when Supabase Auth is integrated (Phase 5)
--- TODO: Add GIN index on tags and tsvector index on content

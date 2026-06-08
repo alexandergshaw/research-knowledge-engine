@@ -6,7 +6,13 @@ import logging
 from typing import Any
 
 from research_worker import db
-from research_worker.handlers import fetch_rss, generate_report, import_url, reindex_sources
+from research_worker.handlers import (
+    fetch_rss,
+    generate_report,
+    import_url,
+    reindex_sources,
+    weekly_digest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +21,7 @@ _HANDLERS = {
     "fetch_rss": fetch_rss.run,
     "generate_report": generate_report.run,
     "reindex_sources": reindex_sources.run,
+    "weekly_digest": weekly_digest.run,
 }
 
 

@@ -25,6 +25,9 @@ Expected schema columns used by this module:
 
   research_reports:
     id, query, title, content, source_ids (BIGINT[]), created_at
+
+  report_sources:
+    report_id (BIGINT), source_id (BIGINT), rank (INT), created_at
 """
 
 from __future__ import annotations
@@ -393,12 +396,18 @@ def get_saved_query(saved_query_id: str) -> dict[str, Any] | None:
         return cur.fetchone()
 
 
-def save_report(query: str, title: str, markdown: str) -> int:
+def save_report(
+    query: str,
+    title: str,
+    markdown: str,
+    source_ids: list[int] | None = None,
+) -> int:
     """Insert a research report and return its (bigint) id.
 
     Adapts to the table schema: writes the body to ``markdown`` and/or the
-    legacy ``content`` column, whichever exist. ``research_reports.id`` is a
-    bigint, so the returned value is an int.
+    legacy ``content`` column, whichever exist, and records ``source_ids`` when
+    that column is present. ``research_reports.id`` is a bigint, so the returned
+    value is an int.
     """
     conn = get_connection()
     cols = _table_columns("research_reports")
@@ -412,6 +421,9 @@ def save_report(query: str, title: str, markdown: str) -> int:
     if "content" in cols:
         insert_cols.append("content")
         values["content"] = markdown
+    if "source_ids" in cols:
+        insert_cols.append("source_ids")
+        values["source_ids"] = [int(s) for s in (source_ids or [])]
 
     placeholders = ", ".join(f"%({col})s" for col in insert_cols)
     sql = (
@@ -422,6 +434,94 @@ def save_report(query: str, title: str, markdown: str) -> int:
         cur.execute(sql, values)
         row = cur.fetchone()
         return int(row["id"])
+
+
+def insert_report_sources(report_id: int, source_ids: list[int]) -> None:
+    """Record which sources were used to build a report.
+
+    Inserts one row per source into ``report_sources`` (report_id, source_id,
+    rank). Skips silently when the table is absent (older schemas) so report
+    generation never fails for lack of traceability storage. Ordering of
+    ``source_ids`` is preserved as the 1-based ``rank``.
+    """
+    if not source_ids:
+        return
+    if not _table_columns("report_sources"):
+        logger.warning(
+            "report_sources table not found — skipping source linkage for report %s",
+            report_id,
+        )
+        return
+
+    conn = get_connection()
+    rows = [
+        (int(report_id), int(source_id), rank)
+        for rank, source_id in enumerate(source_ids, start=1)
+    ]
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO report_sources (report_id, source_id, rank)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (report_id, source_id) DO NOTHING
+            """,
+            rows,
+        )
+
+
+def recent_sources_by_category(
+    category: str | None = None,
+    days: int = 7,
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    """Return the most recent sources, optionally filtered by category.
+
+    Used by the weekly_digest handler. Orders by most-recent published /
+    accessed time so the digest highlights fresh material. Falls back to all
+    categories when ``category`` is None or the column is absent.
+    """
+    conn = get_connection()
+    cols = _table_columns("sources")
+
+    select_cols = ["id", "title", "url", "domain", "category", "content"]
+    for optional in ("subcategory", "source_type", "trust_level", "published_at", "accessed_at"):
+        if optional in cols:
+            select_cols.append(optional)
+
+    where_clauses: list[str] = []
+    params: dict[str, Any] = {"limit": limit}
+
+    if category and "category" in cols:
+        where_clauses.append("category = %(category)s")
+        params["category"] = category
+
+    # Restrict to recent items when a usable timestamp column exists.
+    recency_col = (
+        "published_at" if "published_at" in cols
+        else "accessed_at" if "accessed_at" in cols
+        else None
+    )
+    if recency_col and days > 0:
+        # ``days`` is an int we control, inlined safely via make_interval.
+        where_clauses.append(
+            f"COALESCE({recency_col}, NOW()) >= NOW() - make_interval(days => {int(days)})"
+        )
+
+    order_clauses = []
+    if "published_at" in cols:
+        order_clauses.append("published_at DESC NULLS LAST")
+    if "accessed_at" in cols:
+        order_clauses.append("accessed_at DESC NULLS LAST")
+    order_clauses.append("id DESC")
+
+    sql = f"SELECT {', '.join(select_cols)}\nFROM sources\n"
+    if where_clauses:
+        sql += f"WHERE {' AND '.join(where_clauses)}\n"
+    sql += f"ORDER BY {', '.join(order_clauses)}\nLIMIT %(limit)s"
+
+    with conn.cursor() as cur:
+        cur.execute(sql, params)
+        return cur.fetchall()
 
 
 def link_query_result(saved_query_id: str, report_id: int) -> None:

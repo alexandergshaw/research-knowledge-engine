@@ -3,6 +3,7 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReportSourceList } from "@/components/research/ReportSourceList";
 import { formatDateTime } from "@/lib/utils";
 import type { ResearchReport } from "@/lib/types/database";
 
@@ -86,30 +87,7 @@ export function ReportDetailCard({ report }: ReportDetailCardProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sources Used</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {report.source_ids && report.source_ids.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {report.source_ids.map((id) => (
-                <a
-                  key={id}
-                  href={`/research/sources/${id}`}
-                  className="text-xs text-primary hover:underline"
-                >
-                  Source #{id}
-                </a>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Source tracking will be available in a future release.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <ReportSourceList reportId={report.id} />
     </div>
   );
 }

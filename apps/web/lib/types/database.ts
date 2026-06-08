@@ -5,6 +5,7 @@ export interface Source {
   domain: string;
   source_type: string;
   category: string | null;
+  subcategory: string | null;
   trust_level: string | null;
   published_at: string | null;
   fetched_at: string | null;
@@ -71,6 +72,42 @@ export interface RelatedReport {
   id: number;
   title: string;
   created_at: string;
+}
+
+/** Join row linking a report to a source it was built from. */
+export interface ReportSource {
+  report_id: number;
+  source_id: number;
+  rank: number | null;
+  created_at: string;
+}
+
+/** A source summary referenced by a report (for the "Sources Used" list). */
+export interface ReportSourceSummary {
+  id: number;
+  title: string;
+  url: string;
+  domain: string;
+  category: string | null;
+  rank: number | null;
+}
+
+/** A report summary that referenced a source (for the "Used In Reports" list). */
+export interface SourceReportSummary {
+  id: number;
+  title: string;
+  created_at: string;
+  rank: number | null;
+}
+
+/** A source detail with the reports that used it. */
+export interface SourceWithReports extends Source {
+  reports: SourceReportSummary[];
+}
+
+/** A single full-text search hit. */
+export interface SearchResult extends Source {
+  rank?: number;
 }
 
 export interface PaginatedResult<T> {

@@ -50,6 +50,7 @@ writes results and logs back to the database.
 | `import_url` | `url` (required), `category`, `tags` | Fetch a URL and upsert into `sources` |
 | `fetch_rss` | `feed_id` (optional UUID) | Fetch one or all active RSS feeds and enqueue `import_url` jobs |
 | `generate_report` | `saved_query_id` **or** `query` (one required), `title`, `category`, `subcategory`, `limit` | Full-text search sources and save a Markdown report |
+| `weekly_digest` | `digest` (preset) **or** `category` (one required), `title`, `days`, `limit` | Build a deterministic weekly digest of recent sources in a category |
 | `reindex_sources` | _(none)_ | Touch all source rows to re-fire the `search_vector` trigger |
 
 ### `generate_report` payloads
@@ -74,6 +75,32 @@ The handler accepts two payload shapes:
 
 Reports are deterministic "source packets": Markdown containing source metadata
 and verbatim excerpts. No LLMs, embeddings, or external AI APIs are used.
+
+Every report also records which sources it used in the `report_sources` table
+(`report_id`, `source_id`, `rank`) and in the `research_reports.source_ids`
+array. This powers the "Sources Used" panel on a report and the "Used In
+Reports" panel on a source.
+
+### `weekly_digest` payloads
+
+The handler accepts a preset key or an explicit category:
+
+1. **Preset** — one of `ai`, `cyber`, `software`, `education`:
+   ```json
+   {"digest": "ai"}
+   ```
+   Presets map to a display title (e.g. "AI Weekly") and a source category.
+
+2. **Explicit category** — any category key, with optional tuning:
+   ```json
+   {"category": "software", "title": "Software Weekly", "days": 7, "limit": 10}
+   ```
+   `days` sets the look-back window (default `7`); `limit` caps the number of
+   sources (default `10`).
+
+The digest is deterministic Markdown with **Top Sources**, **Top Articles**,
+**Key Excerpts**, and **Links** sections — no AI summarization. It is stored in
+`research_reports` and linked via `report_sources` like any other report.
 
 ## Database Schema Requirements
 
@@ -135,6 +162,20 @@ INSERT INTO jobs (job_type, payload, status)
 VALUES ('reindex_sources', '{}', 'pending');
 ```
 
+```sql
+-- weekly_digest (preset)
+INSERT INTO jobs (job_type, payload, status)
+VALUES ('weekly_digest', '{"digest": "ai"}'::jsonb, 'pending');
+
+-- weekly_digest (explicit category)
+INSERT INTO jobs (job_type, payload, status)
+VALUES (
+  'weekly_digest',
+  '{"category": "software", "title": "Software Weekly", "days": 7, "limit": 10}'::jsonb,
+  'pending'
+);
+```
+
 ### Verify generated reports
 
 ```sql
@@ -146,6 +187,13 @@ LIMIT 5;
 
 -- Saved-query → report links:
 SELECT * FROM query_results ORDER BY created_at DESC LIMIT 5;
+
+-- Sources used by a report (traceability):
+SELECT rs.rank, s.title, s.url
+FROM report_sources rs
+JOIN sources s ON s.id = rs.source_id
+WHERE rs.report_id = <report_id>
+ORDER BY rs.rank;
 ```
 
 ## Check Logs

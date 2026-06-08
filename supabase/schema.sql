@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS sources (
     domain      TEXT NOT NULL,
     source_type TEXT NOT NULL,
     category    TEXT,
+    subcategory TEXT,
     trust_level TEXT,
     published_at TIMESTAMPTZ,
     fetched_at   TIMESTAMPTZ,
@@ -22,8 +23,23 @@ CREATE TABLE IF NOT EXISTS sources (
     raw_path             TEXT,
     extracted_text_path  TEXT,
     content     TEXT,
-    tags        TEXT[] NOT NULL DEFAULT '{}'
+    tags        TEXT[] NOT NULL DEFAULT '{}',
+    search_vector tsvector GENERATED ALWAYS AS (
+        to_tsvector(
+            'english',
+            COALESCE(title, '') || ' ' ||
+            COALESCE(content, '') || ' ' ||
+            COALESCE(category, '') || ' ' ||
+            COALESCE(subcategory, '') || ' ' ||
+            COALESCE(array_to_string(tags, ' '), '')
+        )
+    ) STORED
 );
+
+CREATE INDEX IF NOT EXISTS sources_search_vector_idx ON sources USING GIN (search_vector);
+CREATE INDEX IF NOT EXISTS sources_tags_idx ON sources USING GIN (tags);
+CREATE INDEX IF NOT EXISTS sources_category_idx ON sources (category);
+CREATE INDEX IF NOT EXISTS sources_published_at_idx ON sources (published_at DESC NULLS LAST);
 
 -- Feeds: configured RSS feed definitions
 CREATE TABLE IF NOT EXISTS feeds (
@@ -96,3 +112,15 @@ CREATE TABLE IF NOT EXISTS source_tags (
     tag       TEXT NOT NULL,
     PRIMARY KEY (source_id, tag)
 );
+
+-- Report sources: which sources were used to build each report
+CREATE TABLE IF NOT EXISTS report_sources (
+    report_id  BIGINT NOT NULL REFERENCES research_reports(id) ON DELETE CASCADE,
+    source_id  BIGINT NOT NULL REFERENCES sources(id) ON DELETE CASCADE,
+    rank       INTEGER,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (report_id, source_id)
+);
+
+CREATE INDEX IF NOT EXISTS report_sources_report_id_idx ON report_sources (report_id);
+CREATE INDEX IF NOT EXISTS report_sources_source_id_idx ON report_sources (source_id);
