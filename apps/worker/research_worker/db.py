@@ -32,6 +32,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import uuid
 from functools import lru_cache
 from typing import Any
 
@@ -375,10 +376,20 @@ def search_sources(
 
 
 def get_saved_query(saved_query_id: str) -> dict[str, Any] | None:
-    """Return a single saved_queries row by id, or None if not found."""
+    """Return a single saved_queries row by id, or None if not found.
+
+    Returns None for malformed ids (e.g. a non-UUID placeholder) instead of
+    raising a raw psycopg ``InvalidTextRepresentation``, so callers can surface
+    a clean "not found" error.
+    """
+    try:
+        normalized_id = str(uuid.UUID(str(saved_query_id)))
+    except (ValueError, AttributeError, TypeError):
+        return None
+
     conn = get_connection()
     with conn.cursor() as cur:
-        cur.execute("SELECT * FROM saved_queries WHERE id = %s", (saved_query_id,))
+        cur.execute("SELECT * FROM saved_queries WHERE id = %s", (normalized_id,))
         return cur.fetchone()
 
 

@@ -186,7 +186,7 @@ def test_generate_report_missing_saved_query_fails(patch_db):
     fake = patch_db(FakeDB(saved_queries={}))
     job = {"id": 5, "payload": {"saved_query_id": "does-not-exist"}}
 
-    with pytest.raises(ValueError, match="saved_query_id not found"):
+    with pytest.raises(ValueError, match="saved_query not found"):
         generate_report.run(job)
 
     assert fake.saved_reports == []

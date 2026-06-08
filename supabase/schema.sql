@@ -56,9 +56,39 @@ CREATE TABLE IF NOT EXISTS research_reports (
     query       TEXT NOT NULL,
     title       TEXT NOT NULL,
     content     TEXT NOT NULL,
+    markdown    TEXT,
     source_ids  BIGINT[] NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Saved queries: reusable research prompts created from the dashboard
+CREATE TABLE IF NOT EXISTS saved_queries (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title       TEXT NOT NULL,
+    query       TEXT NOT NULL,
+    category    TEXT,
+    subcategory TEXT,
+    active      BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS saved_queries_created_at_idx
+    ON saved_queries (created_at DESC);
+CREATE INDEX IF NOT EXISTS saved_queries_active_idx
+    ON saved_queries (active);
+
+-- Query results: join table linking a saved query to its generated reports
+CREATE TABLE IF NOT EXISTS query_results (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    saved_query_id  UUID NOT NULL REFERENCES saved_queries(id) ON DELETE CASCADE,
+    report_id       BIGINT NOT NULL REFERENCES research_reports(id) ON DELETE CASCADE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS query_results_saved_query_id_idx
+    ON query_results (saved_query_id);
+CREATE INDEX IF NOT EXISTS query_results_report_id_idx
+    ON query_results (report_id);
 
 -- Source tags: normalized tag join table
 CREATE TABLE IF NOT EXISTS source_tags (

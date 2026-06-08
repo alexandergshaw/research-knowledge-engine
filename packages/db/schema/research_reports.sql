@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS research_reports (
     id          BIGSERIAL PRIMARY KEY,
     query       TEXT NOT NULL,
     title       TEXT NOT NULL,
-    content     TEXT NOT NULL,      -- Markdown body
+    content     TEXT NOT NULL,      -- Legacy Markdown body
+    markdown    TEXT,               -- Markdown body written by the worker
     source_ids  BIGINT[] NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

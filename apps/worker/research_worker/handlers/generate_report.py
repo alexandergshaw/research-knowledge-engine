@@ -162,7 +162,10 @@ def _resolve_request(
     if saved_query_id:
         saved_query = db.get_saved_query(saved_query_id)
         if saved_query is None:
-            raise ValueError(f"saved_query_id not found: {saved_query_id}")
+            raise ValueError(
+                f"saved_query not found (or id is not a valid UUID): "
+                f"{saved_query_id!r}"
+            )
 
         query = (saved_query.get("query") or "").strip()
         if not query:
