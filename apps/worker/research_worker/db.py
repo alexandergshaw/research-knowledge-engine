@@ -440,17 +440,17 @@ def insert_report_sources(report_id: int, source_ids: list[int]) -> None:
     """Record which sources were used to build a report.
 
     Inserts one row per source into ``report_sources`` (report_id, source_id,
-    rank). Skips silently when the table is absent (older schemas) so report
-    generation never fails for lack of traceability storage. Ordering of
+    rank). When the table is absent (older schemas) the insert is skipped so
+    report generation never fails for lack of traceability storage. Ordering of
     ``source_ids`` is preserved as the 1-based ``rank``.
+
+    The insert is attempted directly and a missing table is detected from the
+    database error, rather than from cached ``information_schema`` metadata.
+    This avoids permanently disabling linkage when the worker process started
+    before the ``report_sources`` migration was applied (the schema-column
+    cache would otherwise stay empty for the lifetime of the process).
     """
     if not source_ids:
-        return
-    if not _table_columns("report_sources"):
-        logger.warning(
-            "report_sources table not found — skipping source linkage for report %s",
-            report_id,
-        )
         return
 
     conn = get_connection()
@@ -458,14 +458,21 @@ def insert_report_sources(report_id: int, source_ids: list[int]) -> None:
         (int(report_id), int(source_id), rank)
         for rank, source_id in enumerate(source_ids, start=1)
     ]
-    with conn.cursor() as cur:
-        cur.executemany(
-            """
-            INSERT INTO report_sources (report_id, source_id, rank)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (report_id, source_id) DO NOTHING
-            """,
-            rows,
+    try:
+        with conn.cursor() as cur:
+            cur.executemany(
+                """
+                INSERT INTO report_sources (report_id, source_id, rank)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (report_id, source_id) DO NOTHING
+                """,
+                rows,
+            )
+    except psycopg.errors.UndefinedTable:
+        logger.warning(
+            "report_sources table not found — skipping source linkage for report %s. "
+            "Apply the report_sources migration to enable report→source traceability.",
+            report_id,
         )
 
 
